@@ -1,10 +1,12 @@
 """Tokenizer for ngrams."""
+import re
+from string import ascii_letters
 from functools import reduce
 from dataprocessing.text_operations import process_text, split_to_tokens
 from typing import List, Sequence, Dict
 
 
-class NgramTokenizer:
+class Tokenizer:
     """Ngram Tokenizer."""
 
     def __init__(self, nbr_grams: int) -> None:
@@ -14,9 +16,22 @@ class NgramTokenizer:
         self.token_to_id: Dict[str, int] = {}
         self.id_to_token: List[str] = []
 
-    def train(self, texts: List[str]) -> None:
+    def train(self, texts: List[str], remove_numbers: bool = True) -> None:
         """Find the vocabulary."""
-        tokens = list(map(lambda x: set(split_to_tokens(process_text(x))), texts))
+        if remove_numbers:
+
+            def is_a_token(token: str) -> bool:
+                """Check if this is a token worth taking."""
+                return not re.match(r"\b[\d-]+\b", token)
+
+        else:
+            is_a_token = lambda x: True
+        tokens = list(
+            map(
+                lambda x: set(filter(is_a_token, split_to_tokens(process_text(x)))),
+                texts,
+            )
+        )
         tokens = reduce(lambda x, y: x | y, tokens)
         self.id_to_token = list(self.special_tokens.values()) + list(tokens)
         self.token_to_id = {x: i for i, x in enumerate(self.id_to_token)}
@@ -24,6 +39,7 @@ class NgramTokenizer:
     def encode(self, texts: Sequence[str]) -> List[List[int]]:
         """Encode a list of strings."""
         tokens = map(lambda x: split_to_tokens(process_text(x)), texts)
+
         tokens = map(
             lambda x: [self.special_tokens["start"]] * self.n
             + x
@@ -44,5 +60,8 @@ class NgramTokenizer:
     def decode(self, token_ids: Sequence[Sequence[int]]) -> List[str]:
         """Decode the texts."""
         return list(
-            map(lambda token_id: [self.id_to_token[x] for x in token_id], token_ids)
+            map(
+                lambda token_id: " ".join([self.id_to_token[x] for x in token_id]),
+                token_ids,
+            )
         )

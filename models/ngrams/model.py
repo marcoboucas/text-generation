@@ -1,7 +1,8 @@
 """Ngram model."""
 
+import json
 from typing import List, Dict, Tuple
-from random import randint, random, choices
+from random import randint, choices
 
 
 class NgramModel:
@@ -30,14 +31,14 @@ class NgramModel:
                     learned_paths[key][value] += 1
                 except KeyError:
                     learned_paths[key][value] = 1
-
         self.start_token = start_token
         self.vocab_size = vocab_size
         self.probas = {}
         self.default_proba = {}
         for ngram, possibilities in learned_paths.items():
-            nbr_posibilities = sum(possibilities.values()) + self.vocab_size
-            print(nbr_posibilities)
+            if len(possibilities) == 0:
+                continue
+            nbr_posibilities = sum(possibilities.values())
             self.probas[ngram] = {
                 token: count / nbr_posibilities
                 # No +1 above, to simplify the prediction
@@ -47,14 +48,14 @@ class NgramModel:
 
     def predict_one(self, beginning: List[int]) -> int:
         """Predict the next value."""
-        beginning = [self.start_token] * (len(beginning) - self.n) + beginning
+        beginning = [self.start_token] * (self.n - len(beginning)) + beginning[
+            -self.n :
+        ]
         key = tuple(beginning)
         if key in self.probas:
-            p = random()
-            if p < sum(self.probas[key].values()):
-                choices(self.probas[key].keys(), self.probas[key].value())
-            else:
-                return randint(0, self.vocab_size)
+            return choices(
+                list(self.probas[key].keys()), list(self.probas[key].values())
+            )[0]
         else:
             return randint(0, self.vocab_size)
 
@@ -68,3 +69,13 @@ class NgramModel:
             prev_token = self.predict_one(sentence)
             sentence.append(prev_token)
         return sentence
+
+    def save(self, path: str):
+        """Save the model somewhere."""
+        with open(path, "w") as file:
+            json.dump(self.probas, file, indent=2)
+
+    def load(self, path: str):
+        """load the model somewhere."""
+        with open(path, "w") as file:
+            self.probas = json.load(file)
