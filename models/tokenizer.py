@@ -12,7 +12,12 @@ class Tokenizer:
     def __init__(self, nbr_grams: int) -> None:
         """Init."""
         self.n = nbr_grams
-        self.special_tokens = {"start": "<START>", "end": "<END>", "unknown": "<UNK>"}
+        self.special_tokens = {
+            "start": "<START>",
+            "end": "<END>",
+            "unknown": "<UNK>",
+            "pad": "<PAD>",
+        }
         self.token_to_id: Dict[str, int] = {}
         self.id_to_token: List[str] = []
 
@@ -36,16 +41,19 @@ class Tokenizer:
         self.id_to_token = list(self.special_tokens.values()) + list(tokens)
         self.token_to_id = {x: i for i, x in enumerate(self.id_to_token)}
 
-    def encode(self, texts: Sequence[str]) -> List[List[int]]:
+    def encode(
+        self, texts: Sequence[str], add_special_tokens: bool = True
+    ) -> List[List[int]]:
         """Encode a list of strings."""
         tokens = map(lambda x: split_to_tokens(process_text(x)), texts)
 
-        tokens = map(
-            lambda x: [self.special_tokens["start"]] * self.n
-            + x
-            + [self.special_tokens["end"]],
-            tokens,
-        )
+        if add_special_tokens:
+            tokens = map(
+                lambda x: [self.special_tokens["start"]] * self.n
+                + x
+                + [self.special_tokens["end"]],
+                tokens,
+            )
         tokens = map(
             lambda x: [
                 self.token_to_id.get(
