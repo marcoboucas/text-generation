@@ -4,13 +4,15 @@ import tensorflow as tf
 from tensorflow import keras
 import numpy as np
 
-from test_dataset import generate_tokenized_dataset
+
 from models.tokenizer import Tokenizer
 import datasets
 
 window_size = 30
 
 if False:
+    from test_dataset import generate_tokenized_dataset
+
     tokenizer = Tokenizer(1)
     dataset = generate_tokenized_dataset(40, window_size, 9, tokenizer)
     tokenized_dataset = tokenizer.encode(dataset)
